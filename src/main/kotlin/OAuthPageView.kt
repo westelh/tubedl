@@ -13,33 +13,40 @@ import org.apache.oltu.oauth2.common.OAuthProviderType
 import org.apache.oltu.oauth2.common.message.types.GrantType
 
 class OAuthPageView(private val parent: Stage) : ChangeListener<Worker.State> {
-    private val clientID = "697386451833-vmi5vcs5e6kh5ufb8eopg6ea7eo8gma9.apps.googleusercontent.com"
-    private val scope = "https://www.googleapis.com/auth/youtube"
-
     private var callback: ((String) -> Unit)? = null
 
     private val webview = WebView().apply {
-        engine.load(genRequest().locationUri)
+        engine.load(makeAuthenticateRequest().locationUri)
         engine.loadWorker.stateProperty().addListener(this@OAuthPageView)
     }
 
     private val stage = Stage().apply {
         title = "TubeDL"
+        initModality(Modality.APPLICATION_MODAL)
+        initOwner(parent)
         val group = Group().apply {
             children.add(webview)
         }
-        initModality(Modality.APPLICATION_MODAL)
-        initOwner(parent)
         scene = Scene(group, 800.0, 600.0, false)
     }
 
-    private fun genRequest(): OAuthClientRequest {
+    private fun makeAuthenticateRequest(): OAuthClientRequest {
         return OAuthClientRequest.authorizationProvider(OAuthProviderType.GOOGLE).apply {
-            setClientId(clientID)
-            setRedirectURI("http://localhost")
-            setScope(scope)
+            setClientId(OAuthValues.clientId)
+            setRedirectURI(OAuthValues.redirect_url)
+            setScope(OAuthValues.scope)
             setResponseType("code")
         }.buildQueryMessage()
+    }
+
+    private fun makeTokenRequest(code: String): OAuthClientRequest {
+        return OAuthClientRequest.tokenProvider(OAuthProviderType.GOOGLE).apply {
+            setClientId(OAuthValues.clientId)
+            setClientSecret(OAuthValues.clientSecret)
+            setRedirectURI(OAuthValues.redirect_url)
+            setGrantType(GrantType.AUTHORIZATION_CODE)
+            setCode(code)
+        }.buildBodyMessage()
     }
 
     fun launch(whenFinish: (String) -> Unit) {
@@ -54,21 +61,12 @@ class OAuthPageView(private val parent: Stage) : ChangeListener<Worker.State> {
             val code = webview.engine.location.split("code=")[1]
             println("extracted code is " + code)
 
-            val tokenReq = OAuthClientRequest.tokenProvider(OAuthProviderType.GOOGLE).apply {
-                setClientId(clientID)
-                setGrantType(GrantType.AUTHORIZATION_CODE)
-                setCode(code)
-                setClientSecret("vHGsqXiEgzc9lPCtahbTdfbY")
-                setRedirectURI("http://localhost")
-            }.buildBodyMessage()
-
-            println(tokenReq.body)
-
             try {
-                val res = OAuthClient(URLConnectionClient()).accessToken(tokenReq, "POST")
+                val res = OAuthClient(URLConnectionClient()).accessToken(makeTokenRequest(code), "POST")
                 callback?.invoke(res.accessToken)
+                println("refresh token:" + res.refreshToken)
+                TokenManager().token = res.refreshToken
             } catch (e: Exception) {
-
             }
             stage.close()
         }
