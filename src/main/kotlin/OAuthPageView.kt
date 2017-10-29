@@ -8,7 +8,7 @@ class OAuthPageView {
         title = "TubeDL"
         val group = Group().apply {
             children.add(WebView().apply {
-                engine.load("http://google.co.jp/")
+                engine.load("https://accounts.google.com/o/oauth2/auth")
             })
         }
         scene = Scene(group, 300.0, 250.0, false)
