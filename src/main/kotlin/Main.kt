@@ -1,7 +1,8 @@
 import javafx.application.Application
-import javafx.scene.Group
+import javafx.event.EventHandler
 import javafx.scene.Scene
-import javafx.scene.web.WebView
+import javafx.scene.control.Button
+import javafx.scene.layout.GridPane
 import javafx.stage.Stage
 
 fun main(args: Array<String>) {
@@ -21,13 +22,15 @@ class Main: Application() {
         if (primaryStage == null) throw NullPointerException("stage is not available")
         else {
             primaryStage.apply {
-                title = "TubeDL"
-                val group = Group().apply {
-                    children.add(WebView().apply {
-                        engine.load("http://google.co.jp/")
+                val parent = GridPane().apply {
+                    children.add(Button().apply {
+                        text = "Google OAuth2認証"
+                        onAction = EventHandler {
+                            OAuthPageView().launch()
+                        }
                     })
                 }
-                scene = Scene(group, 300.0, 250.0, false)
+                scene = Scene(parent, 300.0, 250.0, false)
             }.show()
         }
     }
