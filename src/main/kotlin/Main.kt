@@ -3,15 +3,9 @@ import javafx.event.EventHandler
 import javafx.scene.Scene
 import javafx.scene.control.Alert
 import javafx.scene.control.Button
+import javafx.scene.control.Label
 import javafx.scene.layout.GridPane
 import javafx.stage.Stage
-
-fun main(args: Array<String>) {
-    val req = YoutubeAccess().youtube.channels().list("contentDetails").setMine(true)
-    req.fields = "items/contentDetails,nextPageToken,pageInfo"
-    val res = req.execute()
-    print(res.items)
-}
 
 class Main: Application() {
     lateinit var auth: OAuthPageView
@@ -46,6 +40,9 @@ class Main: Application() {
                         notifyAuthState()
                     }
                 }, 0, 3)
+                add(Label().apply {
+                    text = "Youtube API Connection: N/A"
+                }, 0, 4)
             }
             scene = Scene(parent, 300.0, 250.0, false)
         }.show()
