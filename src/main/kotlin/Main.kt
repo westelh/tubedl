@@ -8,49 +8,46 @@ import javafx.scene.layout.GridPane
 import javafx.stage.Stage
 
 class Main: Application() {
-    lateinit var auth: OAuthPageView
-    lateinit var stage: Stage
+    var youtube: YoutubeAccess? = null
 
-    companion object {
-        fun main(args: Array<String>) {
+    private val authButton = Button().apply {
+        text = "Google OAuth2認証"
+    }
+
+    private val checkButton = Button().apply {
+        text = "認証状態の確認"
+        onAction = EventHandler {
+            notifyAuthState()
         }
+    }
+
+    private val stateLabel = Label().apply {
+        text = "Youtube API Connection: N/A"
     }
 
     override fun start(primaryStage: Stage?) {
         if (primaryStage == null) throw NullPointerException("stage is not available")
-        stage = primaryStage
-        auth = OAuthPageView(this)
-        stage.apply {
-            val parent = GridPane().apply {
-                add(Button().apply {
-                    text = "Google OAuth2認証"
-                    onAction = EventHandler {
-                        auth.launch()
-                    }
-                }, 0, 1)
-                add(Button().apply {
-                    text = "print token"
-                    onAction = EventHandler {
-                        println(auth.token?:"have not received")
-                    }
-                }, 0, 2)
-                add(Button().apply {
-                    text = "認証状態の確認"
-                    onAction = EventHandler {
-                        notifyAuthState()
-                    }
-                }, 0, 3)
-                add(Label().apply {
-                    text = "Youtube API Connection: N/A"
-                }, 0, 4)
+        else {
+            authButton.onAction = EventHandler {
+                OAuthPageView(primaryStage).launch { token ->
+                    youtube = YoutubeAccess(token)
+                    notifyAuthState()
+                }
             }
-            scene = Scene(parent, 300.0, 250.0, false)
-        }.show()
+            primaryStage.apply {
+                val parent = GridPane().apply {
+                    add(authButton, 0, 1)
+                    add(checkButton, 0, 3)
+                    add(stateLabel, 0, 4)
+                }
+                scene = Scene(parent, 300.0, 250.0, false)
+            }.show()
+        }
     }
 
-    fun notifyAuthState() {
+    private fun notifyAuthState() {
         Alert(Alert.AlertType.INFORMATION).apply {
-            contentText = "Google OAuth2認証は" + if (auth.token==null) "完了していません" else "確認済みです"
+            contentText = "Google OAuth2認証は" + if (youtube == null) "完了していません" else "確認済みです"
         }.show()
     }
 }

@@ -1,4 +1,3 @@
-import javafx.application.Application
 import javafx.beans.value.ChangeListener
 import javafx.beans.value.ObservableValue
 import javafx.concurrent.Worker
@@ -7,17 +6,17 @@ import javafx.scene.Scene
 import javafx.scene.web.WebView
 import javafx.stage.Modality
 import javafx.stage.Stage
-import javafx.stage.Window
 import org.apache.oltu.oauth2.client.OAuthClient
 import org.apache.oltu.oauth2.client.URLConnectionClient
 import org.apache.oltu.oauth2.client.request.OAuthClientRequest
 import org.apache.oltu.oauth2.common.OAuthProviderType
 import org.apache.oltu.oauth2.common.message.types.GrantType
 
-class OAuthPageView(val owner: Main): ChangeListener<Worker.State> {
+class OAuthPageView(private val parent: Stage) : ChangeListener<Worker.State> {
     private val clientID = "697386451833-vmi5vcs5e6kh5ufb8eopg6ea7eo8gma9.apps.googleusercontent.com"
     private val scope = "https://www.googleapis.com/auth/youtube"
-    var token: String? = null
+
+    private var callback: ((String) -> Unit)? = null
 
     private val webview = WebView().apply {
         engine.load(genRequest().locationUri)
@@ -30,7 +29,7 @@ class OAuthPageView(val owner: Main): ChangeListener<Worker.State> {
             children.add(webview)
         }
         initModality(Modality.APPLICATION_MODAL)
-        initOwner(this@OAuthPageView.owner.stage)
+        initOwner(parent)
         scene = Scene(group, 800.0, 600.0, false)
     }
 
@@ -43,7 +42,8 @@ class OAuthPageView(val owner: Main): ChangeListener<Worker.State> {
         }.buildQueryMessage()
     }
 
-    fun launch() {
+    fun launch(whenFinish: (String) -> Unit) {
+        callback = whenFinish
         stage.show()
     }
 
@@ -64,11 +64,13 @@ class OAuthPageView(val owner: Main): ChangeListener<Worker.State> {
 
             println(tokenReq.body)
 
-            val res = OAuthClient(URLConnectionClient()).accessToken(tokenReq, "POST")
-            println("token=" + res.accessToken)
-            token = res.accessToken
+            try {
+                val res = OAuthClient(URLConnectionClient()).accessToken(tokenReq, "POST")
+                callback?.invoke(res.accessToken)
+            } catch (e: Exception) {
+
+            }
             stage.close()
-            this@OAuthPageView.owner.notifyAuthState()
         }
     }
 }
