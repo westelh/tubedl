@@ -1,4 +1,7 @@
 import javafx.application.Application
+import javafx.scene.Group
+import javafx.scene.Scene
+import javafx.scene.web.WebView
 import javafx.stage.Stage
 
 fun main(args: Array<String>) {
@@ -15,6 +18,17 @@ class Main: Application() {
     }
 
     override fun start(primaryStage: Stage?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        if (primaryStage == null) throw NullPointerException("stage is not available")
+        else {
+            primaryStage.apply {
+                title = "TubeDL"
+                val group = Group().apply {
+                    children.add(WebView().apply {
+                        engine.load("http://google.co.jp/")
+                    })
+                }
+                scene = Scene(group, 300.0, 250.0, false)
+            }.show()
+        }
     }
 }
